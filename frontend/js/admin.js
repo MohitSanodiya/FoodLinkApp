@@ -1,5 +1,5 @@
 // Admin Dashboard JavaScript for FoodLink AI
-const API_BASE_URL = 'http://localhost:5001/api/admin';
+const API_BASE_URL = 'https://foodlink-admin-backend.onrender.com/api/admin';
 let currentRole = '';
 let currentUserPage = 1;
 let currentListingPage = 1;
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function pingBackend() {
     const statusBadge = document.getElementById('connection-status');
     try {
-        const response = await fetch('http://localhost:5001/health', { method: 'GET' });
+        const response = await fetch('https://foodlink-admin-backend.onrender.com/health', { method: 'GET' });
         if (response.ok) {
             console.log('✅ Backend Health Check: OK');
             if (statusBadge) {
@@ -49,8 +49,8 @@ async function pingBackend() {
         Swal.fire({
             icon: 'error',
             title: 'Backend Unreachable',
-            text: 'The Admin Backend (Port 5001) is not responding. Please make sure the Node.js server is running.',
-            footer: '<a href="http://localhost:5001/health" target="_blank">Try visiting health check</a>'
+            text: 'The Admin Backend is not responding. Please make sure the Node.js server is running.',
+            footer: '<a href="https://foodlink-admin-backend.onrender.com/health" target="_blank">Try visiting health check</a>'
         });
         return false;
     }
