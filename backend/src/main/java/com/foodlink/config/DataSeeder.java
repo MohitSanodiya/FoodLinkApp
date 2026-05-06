@@ -28,9 +28,15 @@ public class DataSeeder implements CommandLineRunner {
                 .filter(u -> u.getRole() == Role.NGO || u.getRole() == Role.GAUSHALA)
                 .count();
 
-        boolean adminExists = userRepository.findByEmail("admin@foodlink.com").isPresent();
+        java.util.Optional<User> existingAdminOpt = userRepository.findByEmail("admin@foodlink.com");
 
-        if (!adminExists) {
+        if (existingAdminOpt.isPresent()) {
+            User admin = existingAdminOpt.get();
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setIsVerified(true);
+            userRepository.save(admin);
+            System.out.println("========== ADMIN PASSWORD FORCE UPDATED ==========");
+        } else {
             User admin = User.builder()
                     .name("Platform Administrator")
                     .email("admin@foodlink.com")
