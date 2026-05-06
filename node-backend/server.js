@@ -2,13 +2,34 @@ const express = require('express');
 const cors = require('cors');
 const { connectDB } = require('./config/db');
 require('dotenv').config();
+const User = require('./models/User');
+const bcrypt = require('bcryptjs');
 
 const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
 // Database Connection
-connectDB();
+connectDB().then(async () => {
+  try {
+    const adminEmail = 'admin@foodlink.com';
+    const adminExists = await User.findOne({ where: { email: adminEmail } });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('admin123', 10);
+      await User.create({
+        name: 'Platform Administrator',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        isVerified: true
+      });
+      console.log('✅ Admin user seeded automatically on startup!');
+    }
+  } catch (err) {
+    console.error('Failed to auto-seed admin:', err.message);
+  }
+});
 
 // Middlewares
 app.use(cors({
