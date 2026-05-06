@@ -28,6 +28,21 @@ public class DataSeeder implements CommandLineRunner {
                 .filter(u -> u.getRole() == Role.NGO || u.getRole() == Role.GAUSHALA)
                 .count();
 
+        boolean adminExists = userRepository.findByEmail("admin@foodlink.com").isPresent();
+
+        if (!adminExists) {
+            User admin = User.builder()
+                    .name("Platform Administrator")
+                    .email("admin@foodlink.com")
+                    .password(passwordEncoder.encode("admin123"))
+                    .location("System")
+                    .role(Role.ADMIN)
+                    .isVerified(true)
+                    .build();
+            userRepository.save(admin);
+            System.out.println("========== ADMIN SEEDED SUCCESSFULLY ==========");
+        }
+
         if (ngoCount < 3) {
             String encodedPassword = passwordEncoder.encode("demo123");
 
