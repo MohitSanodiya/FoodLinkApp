@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Organization Dashboard | FoodLink</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="css/styles.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .navbar-ngo {
+            background: linear-gradient(135deg, #0b5e7e 0%, #0d6e8f 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 28px;
+            border: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .request-card {
+            border-radius: 20px;
+            transition: all 0.3s;
+            border-left: 5px solid;
+        }
+
+        .request-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-accept {
+            background: linear-gradient(135deg, #2e7d32, #4caf50);
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-accept:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 125, 50, 0.3);
+        }
+
+        .btn-reject {
+            background: white;
+            border: 2px solid #dc3545;
+            color: #dc3545;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .btn-reject:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-badge-custom {
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .btn {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .request-transition {
+            transition: all 0.3s ease;
+        }
+
+        .fade-out-scale {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        .urgent-pulse {
+            animation: pulseWarning 2s infinite;
+        }
+
+        @keyframes pulseWarning {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-dark navbar-ngo shadow-sm py-3">
+        <div class="container">
+            <a class="navbar-brand fs-3 fw-bold" href="#">
+                <i class="fas fa-hand-holding-heart me-2"></i>Organization Dashboard
+            </a>
+            <div class="d-flex align-items-center">
+                <span id="userName" class="me-3 text-white-50 fw-semibold"><i
+                        class="fas fa-user-circle me-1"></i></span>
+                <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="logout()"><i
+                        class="fas fa-sign-out-alt me-1"></i>Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container dashboard-container mt-4 pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Welcome Section -->
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
+                    <h2 class="fw-bold text-dark mb-0 d-flex align-items-center">
+                        <span class="fs-1 me-2">👋</span>
+                        <div>Welcome, <span class="text-success fs-4" id="welcomeRoleDisplay">NGO</span> <span class="text-success fs-4" id="welcomeName">User</span> <span
+                                id="topRoleBadge"></span></div>
+                    </h2>
+                </div>
+
+                <!-- Impact Counters -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
+                        <div class="dashboard-card bg-success bg-gradient text-white p-4 position-relative overflow-hidden shadow-sm"
+                            style="border-radius: 20px;">
+                            <i class="fas fa-paw fa-4x position-absolute opacity-25"
+                                style="right: -10px; bottom: -10px;" id="mealsIcon"></i>
+                            <h5 class="fw-bold opacity-75 mb-1"><i class="fas fa-box-open me-2"></i>Meals Accepted</h5>
+                            <h2 class="fw-bolder mb-0 display-5" id="impactMeals">0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card p-4 p-md-5">
+                    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-bell fa-2x text-warning"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0 fw-bold">Pending Donation Requests <span id="pendingCount"
+                                        class="badge bg-danger rounded-pill fs-6 ms-2 d-none"></span></h3>
+                                <p class="text-muted mb-0">Review and respond to food donation offers</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="small text-muted fw-semibold me-3"><i class="fas fa-clock me-1"></i>Updated:
+                                <span id="lastUpdatedVal">just now</span></span>
+                            <button class="btn btn-outline-secondary rounded-pill fw-semibold" onclick="loadData()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="requestsBoard" class="row g-4 mb-5"></div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom mt-2">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-secondary bg-opacity-10 rounded-circle p-3 me-3">
+                                <i class="fas fa-history fa-2x text-secondary"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0 fw-bold">Request History</h3>
+                                <p class="text-muted mb-0">Past accepted, rejected, and expired requests</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 d-flex gap-2 flex-wrap">
+                        <button class="btn btn-sm btn-dark rounded-pill px-3 filter-btn" data-filter="ALL"
+                            onclick="setFilter('ALL')">All</button>
+                        <button class="btn btn-sm btn-outline-success rounded-pill px-3 filter-btn"
+                            data-filter="ACCEPTED" onclick="setFilter('ACCEPTED')">Accepted</button>
+                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3 filter-btn"
+                            data-filter="REJECTED" onclick="setFilter('REJECTED')">Rejected</button>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 filter-btn"
+                            data-filter="EXPIRED" onclick="setFilter('EXPIRED')">Expired</button>
+                    </div>
+                    <div id="historyBoard" class="row g-4"></div>
+
+                    <!-- Pagination Controls -->
+                    <div id="paginationControls" class="d-flex justify-content-between align-items-center mt-4 d-none">
+                        <span class="text-muted small fw-semibold" id="pageInfo">Showing 1-4 of 12</span>
+                        <div>
+                            <button id="prevPageBtn" class="btn btn-sm btn-outline-secondary rounded-pill px-3 me-2"
+                                onclick="changePage(-1)">
+                                <i class="fas fa-chevron-left me-1"></i> Prev
+                            </button>
+                            <button id="nextPageBtn" class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                onclick="changePage(1)">
+                                Next <i class="fas fa-chevron-right ms-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Acceptance Modal Overlay -->
+    <div id="customConfirmModal" class="d-none"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div class="bg-white p-4 rounded-4 shadow-lg text-center" style="max-width: 400px; width: 90%;">
+            <div class="bg-success bg-opacity-10 rounded-circle d-inline-block p-3 mb-3">
+                <i class="fas fa-check-circle fa-3x text-success"></i>
+            </div>
+            <h4 class="fw-bold mb-2">Accept Request?</h4>
+            <p class="text-muted mb-4 small">Are you sure you want to accept this food request? You will be responsible
+                for the pickup.</p>
+            <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-light border rounded-pill px-4 fw-semibold"
+                    onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-success rounded-pill px-4 fw-semibold" id="confirmAcceptBtn">Yes, Accept</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        const user = getUser();
+        if (!user || (user.role !== 'NGO' && user.role !== 'GAUSHALA')) window.location.href = 'login.html';
+        document.getElementById('userName').innerHTML = `<i class="fas fa-user-circle me-1"></i>${user.name}`;
+        if (document.getElementById('welcomeName')) {
+            document.getElementById('welcomeName').innerText = user.name;
+        }
+        if (document.getElementById('welcomeRoleDisplay')) {
+            document.getElementById('welcomeRoleDisplay').innerText = user.role === 'GAUSHALA' ? 'Gaushala' : 'NGO';
+        }
+        if (document.getElementById('mealsIcon')) {
+            document.getElementById('mealsIcon').className = user.role === 'GAUSHALA' ? 'fas fa-paw fa-4x position-absolute opacity-25' : 'fas fa-utensils fa-4x position-absolute opacity-25';
+        }
+        
+        const badge = document.getElementById('topRoleBadge');
+        if (badge) {
+            badge.className = 'badge rounded-pill fw-semibold ms-2 ' + (user.role === 'GAUSHALA' ? 'bg-info bg-opacity-75' : 'bg-primary bg-opacity-75');
+            badge.innerText = user.role;
+        }
+
+        let currentFilter = '';
+        let allHistoryReqs = [];
+        let totalPages = 1;
+        let totalElements = 0;
+        let currentPage = 0; // Spring Page is 0-indexed
+        const itemsPerPage = 6;
+
+        function setFilter(status) {
+            currentFilter = status;
+            currentPage = 1;
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                const isSelected = b.getAttribute('data-filter') === status;
+                if (isSelected) {
+                    b.classList.remove('btn-outline-success', 'btn-outline-danger', 'btn-outline-secondary', 'btn-outline-dark');
+                    b.classList.add(status ? 'btn-' + (status === 'ACCEPTED' ? 'success' : (status === 'REJECTED' ? 'danger' : 'secondary')) : 'btn-dark');
+                    b.classList.remove('text-dark');
+                } else {
+                    const f = b.getAttribute('data-filter');
+                    b.className = 'btn btn-sm rounded-pill px-3 filter-btn ' + (!f ? 'btn-outline-dark' : (f === 'ACCEPTED' ? 'btn-outline-success' : (f === 'REJECTED' ? 'btn-outline-danger' : 'btn-outline-secondary')));
+                }
+            });
+            loadHistory(status);
+        }
+
+        async function refreshDashboard() {
+            loadStats();
+            loadPending();
+            loadHistory(currentFilter || 'ALL');
+        }
+
+        async function loadStats() {
+            try {
+                const stats = await apiFetch('/org/stats');
+                if (stats) {
+                    if (document.getElementById('impactMeals')) {
+                        document.getElementById('impactMeals').innerText = stats.accepted || 0;
+                    }
+                    const pendingCountSpan = document.getElementById('pendingCount');
+                    if (pendingCountSpan) {
+                        pendingCountSpan.innerText = stats.pending || 0;
+                        pendingCountSpan.classList.toggle('d-none', (stats.pending || 0) === 0);
+                    }
+                }
+            } catch (e) {
+                console.error("Stats fetch failed", e);
+            }
+        }
+
+        async function loadPending() {
+            try {
+                const res = await apiFetch(`/org/requests?status=PENDING&page=0&size=4`);
+                const board = document.getElementById('requestsBoard');
+                if (!res || !res.content || res.content.length === 0) {
+                    board.innerHTML = `<div class="col-12"><div class="empty-state py-5"><i class="fas fa-box-open fa-3x text-secondary opacity-50 mb-3"></i><h5 class="fw-bold text-dark mb-1">📭 No pending requests</h5><p class="text-muted small mb-0">Check back later or refresh.</p></div></div>`;
+                } else {
+                    board.innerHTML = `
+                        <div class="col-12 mb-2" id="actionToast"></div>
+                        ${res.content.map(renderCard).join('')}
+                    `;
+                }
+            } catch (e) {
+                console.error("Pending fetch failed", e);
+            }
+        }
+
+        async function loadHistory(status = 'ALL', page = 0) {
+            try {
+                currentPage = page;
+                const fetchStatus = status === 'ALL' ? '' : status;
+                const url = fetchStatus ? `/org/requests?status=${fetchStatus}&page=${page}&size=${itemsPerPage}` : `/org/requests?page=${page}&size=${itemsPerPage}`;
+                const res = await apiFetch(url);
+
+                if (!res || !res.content) return;
+
+                allHistoryReqs = res.content;
+                totalPages = res.totalPages;
+                totalElements = res.totalElements;
+
+                renderHistoryPage();
+            } catch (e) {
+                console.error("History fetch failed", e);
+                document.getElementById('historyBoard').innerHTML = `<div class="col-12 text-center text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Failed to load history</div>`;
+            }
+        }
+
+        // Must define renderCard properly globally or just pass it as scope requires
+        // Wait, renderCard is defined INSIDE loadData(). I must move renderCard out of loadData()!
+
+        const renderCard = (r) => {
+            let borderColor = '#ffc107';
+            let icon = 'fa-clock';
+            let badgeClass = 'bg-warning text-dark';
+            let disabledState = '';
+
+            if (r.status === 'ACCEPTED') {
+                borderColor = '#2e7d32'; icon = 'fa-check-circle'; badgeClass = 'bg-success text-white';
+            } else if (r.status === 'REJECTED') {
+                borderColor = '#dc3545'; icon = 'fa-times-circle'; badgeClass = 'bg-danger text-white';
+            } else if (r.status === 'EXPIRED') {
+                borderColor = '#6c757d'; icon = 'fa-ban'; badgeClass = 'bg-secondary text-white';
+                disabledState = 'disabled';
+            }
+
+            const ageMs = new Date() - new Date(r.createdAt);
+            const isNew = ageMs < 5 * 60 * 1000;
+            let newBadge = isNew ? `<span class="badge bg-danger ms-2 shadow-sm">NEW</span>` : '';
+
+            if (r.status === 'PENDING' && ageMs > 6 * 60 * 60 * 1000) {
+                newBadge += `<span class="badge bg-warning text-dark ms-2 shadow-sm urgent-pulse"><i class="fas fa-exclamation-triangle me-1"></i>Urgent</span>`;
+            }
+
+            return `
+                <div class="col-md-6" id="reqCard-${r.id}">
+                    <div class="request-card card h-100 border-0 shadow-sm p-3 request-transition" style="border-left-color: ${borderColor} !important; border-left-width: 5px;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title fw-bold text-success mb-0 d-flex align-items-center">
+                                    <i class="fas fa-utensils me-2"></i>${escapeHtml(r.foodTitle)} ${newBadge}
+                                </h5>
+                                <span class="status-badge-custom ${badgeClass}">
+                                    <i class="fas ${icon} me-1"></i>${r.status}
+                                </span>
+                            </div>
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="fas fa-building me-1"></i>From: ${escapeHtml(r.hostelName)}
+                            </h6>
+                            <div class="mb-3">
+                                <span class="badge bg-light text-dark rounded-pill px-3 py-2">
+                                    <i class="fas fa-calendar-alt me-1 text-success"></i>${new Date(r.createdAt).toLocaleDateString()}
+                                    <span class="ms-2 text-muted fw-normal">${r.requestAge}</span>
+                                </span>
+                            </div>
+                            ${r.status === 'PENDING' ? `
+                                <div class="d-flex gap-3 mt-3">
+                                    <button class="btn btn-accept w-50 text-white py-2" onclick="respond(this, ${r.id}, 'ACCEPTED')">
+                                        <i class="fas fa-check me-1"></i>Accept
+                                    </button>
+                                    <button class="btn btn-reject w-50 py-2" onclick="respond(this, ${r.id}, 'REJECTED')">
+                                        <i class="fas fa-times me-1"></i>Reject
+                                    </button>
+                                </div>
+                            ` : (r.status === 'ACCEPTED' ? `
+                                <div class="mt-3 bg-success bg-opacity-10 p-3 rounded-3 text-success fw-semibold">
+                                    <i class="fas fa-truck me-2"></i>Pickup Actions Requested:<br>
+                                    <div class="mt-2 small text-dark fw-normal"><i class="fas fa-clock me-1 text-success"></i> ${escapeHtml(r.pickupTime || 'N/A')}</div>
+                                    <div class="small text-dark fw-normal mt-1" style="cursor: pointer;" onclick="copyContact('${r.contactNumber ? r.contactNumber.replace(/'/g, "\\'") : ''}', this)" title="Click to copy">
+                                        <i class="fas fa-phone me-1 text-success"></i> ${escapeHtml(r.contactNumber || 'N/A')}
+                                        <span class="badge bg-success ms-2 copy-msg d-none">Copied!</span>
+                                    </div>
+                                </div>
+                            ` : (r.status === 'EXPIRED' ? `
+                                <div class="mt-3 text-secondary fw-semibold">
+                                    <i class="fas fa-info-circle me-1"></i>Request expired after 12 hours
+                                </div>
+                            ` : ''))}
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        function renderHistoryPage() {
+            const historyBoard = document.getElementById('historyBoard');
+            const paginationControls = document.getElementById('paginationControls');
+
+            if (!allHistoryReqs || allHistoryReqs.length === 0) {
+                historyBoard.innerHTML = `<div class="col-12"><div class="text-center text-muted py-5 small"><i class="fas fa-clock fs-4 mb-2 text-secondary opacity-50 d-block"></i>No request history found.</div></div>`;
+                paginationControls.classList.add('d-none');
+                return;
+            }
+
+            historyBoard.innerHTML = allHistoryReqs.map(renderCard).join('');
+
+            if (totalPages > 1) {
+                paginationControls.classList.remove('d-none');
+                document.getElementById('pageInfo').innerText = `Page ${currentPage + 1} of ${totalPages}`;
+                document.getElementById('prevPageBtn').disabled = currentPage === 0;
+                document.getElementById('nextPageBtn').disabled = currentPage + 1 >= totalPages;
+            } else {
+                paginationControls.classList.add('d-none');
+            }
+        }
+
+        function changePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 0 && newPage < totalPages) {
+                loadHistory(currentFilter || 'ALL', newPage);
+            }
+        }
+
+        let pendingRespondId = null;
+        let pendingRespondBtn = null;
+
+        function closeConfirmModal() {
+            document.getElementById('customConfirmModal').classList.remove('d-flex');
+            document.getElementById('customConfirmModal').classList.add('d-none');
+        }
+
+        async function respond(btnObj, id, status) {
+            if (status === 'ACCEPTED') {
+                pendingRespondId = id;
+                pendingRespondBtn = btnObj;
+                const modal = document.getElementById('customConfirmModal');
+                modal.classList.remove('d-none');
+                modal.classList.add('d-flex');
+                return;
+            }
+            executeRespond(btnObj, id, status);
+        }
+
+        document.getElementById('confirmAcceptBtn').addEventListener('click', () => {
+            closeConfirmModal();
+            if (pendingRespondId && pendingRespondBtn) {
+                executeRespond(pendingRespondBtn, pendingRespondId, 'ACCEPTED');
+            }
+        });
+
+        async function executeRespond(btnObj, id, status) {
+            const originalHTML = btnObj.innerHTML;
+            btnObj.innerHTML = `<i class='fas fa-spinner fa-spin me-1'></i>...`;
+            btnObj.disabled = true;
+            try {
+                await apiFetch(`/org/requests/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ status })
+                });
+
+                const toast = document.getElementById('actionToast');
+                if (toast) {
+                    toast.innerHTML = `<div class="alert alert-success rounded-pill fw-semibold"><i class="fas fa-check-circle me-2"></i>Request Processed ✅</div>`;
+                }
+
+                // 6. Animated Status Change
+                const cardWrapper = document.getElementById(`reqCard-${id}`);
+                if (cardWrapper) {
+                    const innerCard = cardWrapper.querySelector('.request-card');
+                    if (innerCard) innerCard.classList.add('fade-out-scale');
+                    setTimeout(() => refreshDashboard(), 300);
+                } else {
+                    setTimeout(() => refreshDashboard(), 800);
+                }
+            } catch (e) {
+                const toast = document.getElementById('actionToast');
+                if (toast) {
+                    toast.innerHTML = `<div class="alert alert-danger rounded-pill fw-semibold shadow-sm"><i class="fas fa-times me-2"></i>${escapeHtml(e.message)}</div>`;
+                    setTimeout(() => toast.innerHTML = '', 4000);
+                }
+                btnObj.innerHTML = originalHTML;
+                btnObj.disabled = false;
+            }
+        }
+
+        function copyContact(number, context) {
+            if (!number || number === 'N/A') return;
+            navigator.clipboard.writeText(number).then(() => {
+                const msg = context.querySelector('.copy-msg');
+                if (msg) {
+                    msg.classList.remove('d-none');
+                    setTimeout(() => msg.classList.add('d-none'), 2000);
+                }
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        refreshDashboard();
+    </script>
+</body>
+
+</html>

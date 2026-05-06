@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Register | FoodLink</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="css/styles.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, #2e7d32, #4caf50);
+            border: none;
+            border-radius: 50px;
+            padding: 12px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(46, 125, 50, 0.3);
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 12px;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #2e7d32;
+            box-shadow: 0 0 0 0.2rem rgba(46, 125, 50, 0.1);
+        }
+    </style>
+</head>
+
+<body class="py-5">
+    <main class="container mb-5" style="max-width: 650px;">
+        <div class="glass-card p-5 mt-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-seedling fa-3x" style="color: #2e7d32;"></i>
+                <h2 class="mt-3 fw-bold"
+                    style="background: linear-gradient(135deg, #2e7d32, #4caf50); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Join FoodLink</h2>
+                <p class="text-muted">Start your journey to reduce food waste</p>
+            </div>
+            <form id="regForm">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold"><i class="fas fa-user me-2 text-success"></i>Full
+                            Name</label>
+                        <input type="text" class="form-control" id="name" placeholder="Enter your name" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold"><i class="fas fa-envelope me-2 text-success"></i>Email
+                            Address</label>
+                        <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold"><i
+                                class="fas fa-lock me-2 text-success"></i>Password</label>
+                        <input type="password" class="form-control" id="password" placeholder="Create a strong password"
+                            required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold"><i class="fas fa-city me-2 text-success"></i>City</label>
+                        <input type="text" class="form-control" id="city" placeholder="Your city" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold"><i class="fas fa-tag me-2 text-success"></i>Account
+                            Role</label>
+                        <select class="form-select" id="role" required>
+                            <option value="">Choose your role...</option>
+                            <option value="HOSTEL">🏨 Hostel (Student Accommodation)</option>
+                            <option value="HOTEL">🏢 Hotel / Restaurant</option>
+                            <option value="NGO">🤝 NGO (Receiving Donor)</option>
+                            <option value="GAUSHALA">🐄 Gaushala (Animal Shelter)</option>
+                        </select>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <button class="w-100 btn btn-register text-white btn-lg" type="submit" id="submitBtn">
+                    <i class="fas fa-user-plus me-2"></i>Complete Registration
+                </button>
+                <div class="text-center mt-4">
+                    <p class="mb-2">Already have an account? <a href="login.html"
+                            class="text-decoration-none fw-semibold" style="color: #2e7d32;">Sign in</a></p>
+                    <a href="index.html" class="text-decoration-none text-muted small">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Home
+                    </a>
+                </div>
+            </form>
+            <div id="alertBox" class="mt-4"></div>
+        </div>
+    </main>
+
+    <!-- Success Modal Replacement with Alert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/api.js"></script>
+    <script>
+        document.getElementById('regForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<i class='fas fa-spinner fa-spin me-2'></i>Processing...`;
+            btn.disabled = true;
+
+            const data = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                location: document.getElementById('city').value,
+                role: document.getElementById('role').value
+            };
+            
+            try {
+                const res = await apiFetch('/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+                
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Registration Successful!',
+                    text: 'Your profile is currently under verification. You will be able to login once an admin approves your account.',
+                    confirmButtonColor: '#2e7d32',
+                    confirmButtonText: 'Great!'
+                });
+                
+                window.location.href = 'login.html';
+            } catch (err) {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Registration Failed',
+                    text: err.message,
+                    confirmButtonColor: '#d33'
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
