@@ -33,11 +33,17 @@ async function apiFetch(endpoint, options = {}) {
         headers
     });
 
-    if (response.status === 401 || response.status === 403) {
+    // 401 means token missing/expired -> clear session and send user to login.
+    // 403 can also happen for role/status restrictions; do not force logout on that.
+    if (response.status === 401) {
         if (!window.location.href.includes('login.html') && !window.location.href.includes('register.html')) {
             logout();
         }
         throw new Error('Unauthorized');
+    }
+    if (response.status === 403) {
+        const err = await response.text();
+        throw new Error(err || 'Forbidden');
     }
 
     if (!response.ok) {
