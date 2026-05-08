@@ -1,5 +1,6 @@
 // Admin Dashboard JavaScript for FoodLink AI
-const API_BASE_URL = 'https://foodlink-admin-backend.onrender.com/api/admin';
+const ADMIN_BACKEND_ORIGIN = 'https://foodlink-admin-backend.onrender.com';
+const API_BASE_URL = `${ADMIN_BACKEND_ORIGIN}/api/admin`;
 let currentRole = '';
 let currentUserPage = 1;
 let currentListingPage = 1;
@@ -9,12 +10,14 @@ let cachedListings = [];
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Admin Dashboard Initializing...');
 
-    // Check if we can reach the backend at all
-    const isBackendAlive = await pingBackend();
-    if (!isBackendAlive) return;
-
     checkAdminAuth();
     setupNavigation();
+
+    // Check if we can reach the backend at all
+    const isBackendAlive = await pingBackend();
+    if (!isBackendAlive) {
+        console.warn('Admin backend health check failed, continuing with data requests.');
+    }
 
     // Initial data fetch
     showLoader(true);
@@ -30,30 +33,43 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Ping Backend to check connectivity
 async function pingBackend() {
     const statusBadge = document.getElementById('connection-status');
-    try {
-        const response = await fetch('https://foodlink-admin-backend.onrender.com/health', { method: 'GET' });
-        if (response.ok) {
-            console.log('✅ Backend Health Check: OK');
-            if (statusBadge) {
-                statusBadge.classList.replace('bg-danger', 'bg-success');
-                statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Online';
+    const healthUrl = `${ADMIN_BACKEND_ORIGIN}/health`;
+    const retries = 3;
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const response = await fetch(`${healthUrl}?ts=${Date.now()}`, {
+                method: 'GET',
+                cache: 'no-store'
+            });
+
+            if (response.ok) {
+                console.log(`✅ Backend Health Check: OK (attempt ${attempt})`);
+                if (statusBadge) {
+                    statusBadge.classList.replace('bg-danger', 'bg-success');
+                    statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Online';
+                }
+                return true;
             }
-            return true;
+        } catch (err) {
+            console.error(`❌ Backend Unreachable (attempt ${attempt}/${retries}):`, err);
         }
-    } catch (err) {
-        console.error('❌ Backend Unreachable:', err);
-        if (statusBadge) {
-            statusBadge.classList.replace('bg-success', 'bg-danger');
-            statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Offline';
+
+        if (attempt < retries) {
+            await new Promise(resolve => setTimeout(resolve, 1200 * attempt));
         }
-        Swal.fire({
-            icon: 'error',
-            title: 'Backend Unreachable',
-            text: 'The Admin Backend is not responding. Please make sure the Node.js server is running.',
-            footer: '<a href="https://foodlink-admin-backend.onrender.com/health" target="_blank">Try visiting health check</a>'
-        });
-        return false;
     }
+
+    if (statusBadge) {
+        statusBadge.classList.replace('bg-success', 'bg-danger');
+        statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Offline';
+    }
+    Swal.fire({
+        icon: 'warning',
+        title: 'Backend connection unstable',
+        text: 'Health check failed. We will still try loading dashboard data.',
+        footer: `<a href="${healthUrl}" target="_blank" rel="noopener noreferrer">Open health check</a>`
+    });
     return false;
 }
 
