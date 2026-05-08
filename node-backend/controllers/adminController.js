@@ -10,7 +10,15 @@ exports.getStats = async (req, res) => {
     const totalGaushalas = await User.count({ where: { role: 'GAUSHALA', isDeleted: false } });
     const totalHotels = await User.count({ where: { role: 'HOTEL', isDeleted: false } });
     const totalHostels = await User.count({ where: { role: 'HOSTEL', isDeleted: false } });
-    const totalListings = await FoodListing.count({ where: { isDeleted: false } });
+    // Compatibility: some deployed DBs do not have is_deleted on food_listings.
+    // Try soft-delete aware count first, then gracefully fallback to full count.
+    let totalListings = 0;
+    try {
+      totalListings = await FoodListing.count({ where: { isDeleted: false } });
+    } catch (err) {
+      console.warn('Listing soft-delete column missing, using fallback count:', err.message);
+      totalListings = await FoodListing.count();
+    }
     const pendingUsers = await User.count({ where: { status: 'PENDING', isDeleted: false } });
 
     res.status(200).json({
@@ -139,7 +147,8 @@ exports.getListings = async (req, res) => {
     console.log(`Fetching listings (Page: ${page}, Limit: ${limit})...`);
     
     const { count, rows } = await FoodListing.findAndCountAll({
-      where: { isDeleted: false },
+      // Avoid selecting isDeleted because some DBs don't contain is_deleted.
+      attributes: { exclude: ['isDeleted'] },
       include: [
         {
           model: User,
@@ -175,10 +184,9 @@ exports.getRecentActivity = async (req, res) => {
     });
 
     const latestListings = await FoodListing.findAll({
-      where: { isDeleted: false },
+      attributes: ['id', 'title'],
       limit: 5,
       order: [['id', 'DESC']],
-      attributes: ['id', 'title']
     });
 
     const activities = [
