@@ -32,7 +32,7 @@ public class OrgController {
 
     
     @GetMapping
-    @PreAuthorize("hasAnyRole('HOSTEL', 'HOTEL')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HOSTEL', 'ROLE_HOTEL')")
     public ResponseEntity<Page<UserDTO>> getOrgByCity(
             @RequestParam("city") String cityStr,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -47,7 +47,7 @@ public class OrgController {
 
     
     @PostMapping("/requests")
-    @PreAuthorize("hasAnyRole('HOSTEL', 'HOTEL')")
+    @PreAuthorize("hasAnyAuthority('ROLE_HOSTEL', 'ROLE_HOTEL')")
     public ResponseEntity<?> createRequest(@RequestBody DonationRequestPayload payload, Authentication authentication) {
         User hostel = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("Hostel not found"));
@@ -58,7 +58,7 @@ public class OrgController {
 
     
     @GetMapping("/requests")
-    @PreAuthorize("hasAnyRole('NGO', 'GAUSHALA')")
+    @PreAuthorize("hasAnyAuthority('ROLE_NGO', 'ROLE_GAUSHALA')")
     public ResponseEntity<Page<DonationRequestDTO>> getMyRequests(
             @RequestParam(required = false) String status, 
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
@@ -73,7 +73,7 @@ public class OrgController {
 
     
     @PutMapping("/requests/{id}")
-    @PreAuthorize("hasAnyRole('NGO', 'GAUSHALA')")
+    @PreAuthorize("hasAnyAuthority('ROLE_NGO', 'ROLE_GAUSHALA')")
     public ResponseEntity<?> updateRequestStatus(@PathVariable Long id, 
             @RequestBody ResponseActionRequest response, Authentication authentication) {
             
@@ -85,7 +85,7 @@ public class OrgController {
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('NGO', 'GAUSHALA')")
+    @PreAuthorize("hasAnyAuthority('ROLE_NGO', 'ROLE_GAUSHALA')")
     public ResponseEntity<java.util.Map<String, Object>> getStats(Authentication authentication) {
         User org = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("Organization not found"));

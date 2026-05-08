@@ -3,6 +3,7 @@ package com.foodlink.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -45,9 +46,10 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/hostels/foods/**").hasAnyRole("HOSTEL", "HOTEL")
-                .requestMatchers("/api/org/**").hasAnyRole("HOSTEL", "HOTEL", "NGO", "GAUSHALA")
+                .requestMatchers("/api/hostels/**").hasAnyAuthority("ROLE_HOSTEL", "ROLE_HOTEL")
+                .requestMatchers("/api/org/**").hasAnyAuthority("ROLE_HOSTEL", "ROLE_HOTEL", "ROLE_NGO", "ROLE_GAUSHALA")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

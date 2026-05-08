@@ -1,4 +1,6 @@
-const API_URL = 'https://foodlinkapp.onrender.com/api';
+const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    ? 'http://localhost:8080/api'
+    : 'https://foodlinkapp.onrender.com/api';
 
 function getStoredItem(key) {
     return localStorage.getItem(key) || sessionStorage.getItem(key);
@@ -9,17 +11,26 @@ function getToken() {
 }
 
 function getUser() {
+    const token = getToken();
+    const tokenUser = token ? getUserFromToken(token) : null;
     const userStr = getStoredItem('user');
+    let storedUser = null;
+
     if (userStr) {
         try {
-            return JSON.parse(userStr);
+            storedUser = JSON.parse(userStr);
         } catch (err) {
             console.warn('Stored user session is invalid, falling back to token claims.');
         }
     }
 
-    const token = getToken();
-    return token ? getUserFromToken(token) : null;
+    if (!tokenUser) return storedUser;
+
+    if (storedUser && (!storedUser.email || storedUser.email === tokenUser.email)) {
+        return { ...storedUser, email: tokenUser.email, role: tokenUser.role };
+    }
+
+    return tokenUser;
 }
 
 function setAuth(token, user) {
@@ -47,6 +58,17 @@ function getUserFromToken(token) {
         };
     } catch (err) {
         return null;
+    }
+}
+
+function getErrorMessage(body, fallback) {
+    if (!body) return fallback;
+
+    try {
+        const parsed = JSON.parse(body);
+        return parsed.error || parsed.message || fallback;
+    } catch (err) {
+        return body;
     }
 }
 
@@ -86,12 +108,12 @@ async function apiFetch(endpoint, options = {}) {
     }
     if (response.status === 403) {
         const err = await response.text();
-        throw new Error(err || 'Forbidden');
+        throw new Error(getErrorMessage(err, 'Forbidden'));
     }
 
     if (!response.ok) {
         const err = await response.text();
-        throw new Error(err || 'Request failed');
+        throw new Error(getErrorMessage(err, 'Request failed'));
     }
 
     const contentType = response.headers.get('content-type');

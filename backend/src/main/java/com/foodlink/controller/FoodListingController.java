@@ -23,7 +23,7 @@ import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/hostels")
-@PreAuthorize("hasAnyRole('HOSTEL', 'HOTEL')")
+@PreAuthorize("hasAnyAuthority('ROLE_HOSTEL', 'ROLE_HOTEL')")
 public class FoodListingController {
 
     @Autowired

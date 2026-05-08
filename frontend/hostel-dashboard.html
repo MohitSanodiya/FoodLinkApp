@@ -427,7 +427,7 @@
 
                 setTimeout(() => { document.getElementById('createAlert').innerHTML = ''; }, 3000);
             } catch (err) {
-                document.getElementById('createAlert').innerHTML = `<div class="alert alert-danger rounded-3"><i class="fas fa-exclamation-triangle me-2"></i>Something went wrong ❌</div>`;
+                document.getElementById('createAlert').innerHTML = `<div class="alert alert-danger rounded-3"><i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(err.message || 'Something went wrong')}</div>`;
             } finally {
                 btn.innerHTML = originalBtnText;
                 btn.disabled = false;
