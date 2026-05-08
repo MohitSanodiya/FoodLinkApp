@@ -249,6 +249,7 @@ function renderListingsTable(listings) {
     tbody.innerHTML = listings.length ? '' : '<tr><td colspan="6" class="text-center py-5">No listings found.</td></tr>';
 
     listings.forEach(item => {
+        const safeListingId = String(item.id ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><div class="fw-bold">${item.title}</div></td>
@@ -261,7 +262,7 @@ function renderListingsTable(listings) {
                 <span class="badge badge-role-${(item.creator?.role || '').toLowerCase()} x-small">${item.creator?.role || 'N/A'}</span>
             </td>
             <td>
-                <button class="action-btn text-info" title="View Details" onclick="showListingDetails(${item.id})">
+                <button type="button" class="action-btn text-info" title="View Details" onclick="showListingDetails('${safeListingId}')">
                     <i class="fas fa-eye"></i>
                 </button>
             </td>
@@ -445,8 +446,18 @@ function renderRecentActivity(activities) {
 }
 
 async function showListingDetails(listingId) {
-    const listing = cachedListings.find(l => l.id === listingId);
-    if (!listing) return;
+    const listing = cachedListings.find(l => String(l.id) === String(listingId));
+    if (!listing) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Listing not found',
+            text: 'Could not resolve this listing. Please refresh listings and try again.'
+        });
+        return;
+    }
+
+    const createdAtText = listing.createdAt ? new Date(listing.createdAt).toLocaleString() : 'N/A';
+    const expiryText = listing.expiry_time ? new Date(listing.expiry_time).toLocaleString() : 'N/A';
 
     Swal.fire({
         title: `<span class="text-success">${listing.title}</span>`,
@@ -474,11 +485,11 @@ async function showListingDetails(listingId) {
                     </div>
                     <div class="col-6">
                         <small class="text-muted d-block mb-1"><i class="fas fa-clock me-1"></i>Created At:</small>
-                        <div>${new Date(listing.createdAt).toLocaleString()}</div>
+                        <div>${createdAtText}</div>
                     </div>
                     <div class="col-6">
                         <small class="text-muted d-block mb-1"><i class="fas fa-hourglass-end me-1"></i>Expiry:</small>
-                        <div>${listing.expiry_time ? new Date(listing.expiry_time).toLocaleString() : 'N/A'}</div>
+                        <div>${expiryText}</div>
                     </div>
                 </div>
             </div>
