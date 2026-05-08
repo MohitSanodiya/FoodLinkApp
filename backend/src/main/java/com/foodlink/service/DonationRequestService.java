@@ -26,6 +26,9 @@ public class DonationRequestService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private SmsNotificationService smsNotificationService;
+
     @SuppressWarnings("null")
     public void createRequest(Long foodListingId, Long ngoId, Long hostelId) {
         if (donationRequestRepository.existsByFoodListingIdAndNgoId(foodListingId, ngoId)) {
@@ -113,7 +116,11 @@ public class DonationRequestService {
         
         request.setStatus(newStatus);
 
-        donationRequestRepository.save(request);
+        DonationRequest savedRequest = donationRequestRepository.save(request);
+
+        if (newStatus == RequestStatus.ACCEPTED) {
+            smsNotificationService.sendAcceptanceNotification(savedRequest);
+        }
     }
 
     public java.util.Map<String, Object> getHostelStats(Long hostelId) {

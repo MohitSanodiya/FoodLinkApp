@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function pingBackend() {
     const statusBadge = document.getElementById('connection-status');
     const healthUrl = `${ADMIN_BACKEND_ORIGIN}/health`;
+    const statsProbeUrl = `${API_BASE_URL}/stats`;
     const retries = 3;
 
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -45,6 +46,21 @@ async function pingBackend() {
 
             if (response.ok) {
                 console.log(`✅ Backend Health Check: OK (attempt ${attempt})`);
+                if (statusBadge) {
+                    statusBadge.classList.replace('bg-danger', 'bg-success');
+                    statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Online';
+                }
+                return true;
+            }
+
+            // Health route can intermittently fail during cold start, so verify using real admin API.
+            const statsProbe = await fetch(`${statsProbeUrl}?probe=1&ts=${Date.now()}`, {
+                method: 'GET',
+                headers: getHeaders(),
+                cache: 'no-store'
+            });
+            if (statsProbe.ok || statsProbe.status === 401 || statsProbe.status === 403) {
+                console.log(`✅ Backend API probe succeeded (attempt ${attempt})`);
                 if (statusBadge) {
                     statusBadge.classList.replace('bg-danger', 'bg-success');
                     statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Online';
@@ -64,12 +80,7 @@ async function pingBackend() {
         statusBadge.classList.replace('bg-success', 'bg-danger');
         statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Offline';
     }
-    Swal.fire({
-        icon: 'warning',
-        title: 'Backend connection unstable',
-        text: 'Health check failed. We will still try loading dashboard data.',
-        footer: `<a href="${healthUrl}" target="_blank" rel="noopener noreferrer">Open health check</a>`
-    });
+    console.warn('Backend health check could not be confirmed after retries.');
     return false;
 }
 
