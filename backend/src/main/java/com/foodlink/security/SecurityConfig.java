@@ -47,6 +47,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/health", "/api/health").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/hostels/**").hasAnyAuthority("ROLE_HOSTEL", "ROLE_HOTEL")
                 .requestMatchers("/api/org/**").hasAnyAuthority("ROLE_HOSTEL", "ROLE_HOTEL", "ROLE_NGO", "ROLE_GAUSHALA")
