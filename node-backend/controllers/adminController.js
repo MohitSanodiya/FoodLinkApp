@@ -147,8 +147,8 @@ exports.getListings = async (req, res) => {
     console.log(`Fetching listings (Page: ${page}, Limit: ${limit})...`);
     
     const { count, rows } = await FoodListing.findAndCountAll({
-      // Avoid selecting isDeleted because some DBs don't contain is_deleted.
-      attributes: { exclude: ['isDeleted'] },
+      // Keep the selection schema-safe for older deployed DBs.
+      attributes: ['id', 'title', 'location', 'quantity', 'created_by_id'],
       include: [
         {
           model: User,
