@@ -6,11 +6,20 @@ let currentUserPage = 1;
 let currentListingPage = 1;
 let cachedListings = [];
 
+function setConnectionStatus(isOnline) {
+    const statusBadge = document.getElementById('connection-status');
+    if (!statusBadge) return;
+
+    statusBadge.classList.toggle('bg-success', isOnline);
+    statusBadge.classList.toggle('bg-danger', !isOnline);
+    statusBadge.innerHTML = `<i class="fas fa-circle me-1 small"></i> ${isOnline ? 'Online' : 'Offline'}`;
+}
+
 // On Page Load
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('Admin Dashboard Initializing...');
 
-    checkAdminAuth();
+    if (!checkAdminAuth()) return;
     setupNavigation();
 
     // Check if we can reach the backend at all
@@ -32,7 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Ping Backend to check connectivity
 async function pingBackend() {
-    const statusBadge = document.getElementById('connection-status');
     const healthUrl = `${ADMIN_BACKEND_ORIGIN}/health`;
     const statsProbeUrl = `${API_BASE_URL}/stats`;
     const retries = 3;
@@ -46,10 +54,7 @@ async function pingBackend() {
 
             if (response.ok) {
                 console.log(`✅ Backend Health Check: OK (attempt ${attempt})`);
-                if (statusBadge) {
-                    statusBadge.classList.replace('bg-danger', 'bg-success');
-                    statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Online';
-                }
+                setConnectionStatus(true);
                 return true;
             }
 
@@ -61,10 +66,7 @@ async function pingBackend() {
             });
             if (statsProbe.ok || statsProbe.status === 401 || statsProbe.status === 403) {
                 console.log(`✅ Backend API probe succeeded (attempt ${attempt})`);
-                if (statusBadge) {
-                    statusBadge.classList.replace('bg-danger', 'bg-success');
-                    statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Online';
-                }
+                setConnectionStatus(true);
                 return true;
             }
         } catch (err) {
@@ -76,37 +78,23 @@ async function pingBackend() {
         }
     }
 
-    if (statusBadge) {
-        statusBadge.classList.replace('bg-success', 'bg-danger');
-        statusBadge.innerHTML = '<i class="fas fa-circle me-1 small"></i> Offline';
-    }
+    setConnectionStatus(false);
     console.warn('Backend health check could not be confirmed after retries.');
     return false;
 }
 
 // Authentication Check
 function checkAdminAuth() {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = typeof requireRole === 'function' ? requireRole('ADMIN') : null;
 
-    if (!token) {
-        window.location.href = 'login.html';
-        return;
-    }
-
-    if (user.role !== 'ADMIN') {
-        Swal.fire({
-            icon: 'error',
-            title: 'Access Denied',
-            text: 'Admin privileges required.',
-            confirmButtonText: 'Go to Login'
-        }).then(() => { window.location.href = 'login.html'; });
-        return;
+    if (!user) {
+        return false;
     }
 
     // Set UI Info
     document.getElementById('admin-name').textContent = user.name || 'Admin User';
     document.getElementById('admin-initials').textContent = (user.name || 'A')[0].toUpperCase();
+    return true;
 }
 
 // Setup Sidebar Navigation
@@ -135,11 +123,30 @@ function setupNavigation() {
 
 // Global Headers
 function getHeaders() {
-    const token = localStorage.getItem('token');
+    const token = typeof getToken === 'function' ? getToken() : localStorage.getItem('token');
     return {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
     };
+}
+
+async function adminFetch(url, options = {}) {
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            ...getHeaders(),
+            ...(options.headers || {})
+        },
+        cache: options.cache || 'no-store'
+    });
+
+    if (response.status === 401 || response.status === 403) {
+        if (typeof logout === 'function') logout();
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    if (response.ok) setConnectionStatus(true);
+    return response;
 }
 
 // Loader
@@ -152,7 +159,7 @@ function showLoader(show) {
 
 async function fetchStats() {
     try {
-        const response = await fetch(`${API_BASE_URL}/stats`, { headers: getHeaders() });
+        const response = await adminFetch(`${API_BASE_URL}/stats`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const stats = await response.json();
@@ -180,7 +187,7 @@ async function fetchUsers(page = 1) {
         if (currentRole) url.searchParams.append('role', currentRole);
         if (search) url.searchParams.append('search', search);
 
-        const response = await fetch(url, { headers: getHeaders() });
+        const response = await adminFetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
@@ -241,7 +248,7 @@ async function fetchListings(page = 1) {
     currentListingPage = page;
     showLoader(true);
     try {
-        const response = await fetch(`${API_BASE_URL}/listings?page=${page}&limit=10`, { headers: getHeaders() });
+        const response = await adminFetch(`${API_BASE_URL}/listings?page=${page}&limit=10`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         cachedListings = data.listings || [];
@@ -366,6 +373,8 @@ function filterUsers(role) {
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     window.location.href = 'login.html';
 }
 
@@ -413,7 +422,7 @@ function renderPagination(containerId, totalPages, currentPage, callback) {
 // RECENT ACTIVITY FEED
 async function fetchRecentActivity() {
     try {
-        const response = await fetch(`${API_BASE_URL}/recent-activity`, { headers: getHeaders() });
+        const response = await adminFetch(`${API_BASE_URL}/recent-activity`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         renderRecentActivity(data);

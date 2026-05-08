@@ -362,8 +362,8 @@
 
     <script src="js/api.js"></script>
     <script>
-        const user = getUser();
-        if (!user || (user.role !== 'HOSTEL' && user.role !== 'HOTEL')) window.location.href = 'login.html';
+        const user = requireRole(['HOSTEL', 'HOTEL']);
+        if (!user) throw new Error('Authentication required');
 
         // Check Account Status
         if (user.status && user.status !== 'ACTIVE') {

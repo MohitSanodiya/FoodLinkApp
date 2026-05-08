@@ -241,8 +241,8 @@
 
     <script src="js/api.js"></script>
     <script>
-        const user = getUser();
-        if (!user || (user.role !== 'NGO' && user.role !== 'GAUSHALA')) window.location.href = 'login.html';
+        const user = requireRole(['NGO', 'GAUSHALA']);
+        if (!user) throw new Error('Authentication required');
         document.getElementById('userName').innerHTML = `<i class="fas fa-user-circle me-1"></i>${user.name}`;
         if (document.getElementById('welcomeName')) {
             document.getElementById('welcomeName').innerText = user.name;

@@ -1,23 +1,66 @@
 const API_URL = 'https://foodlinkapp.onrender.com/api';
 
+function getStoredItem(key) {
+    return localStorage.getItem(key) || sessionStorage.getItem(key);
+}
+
 function getToken() {
-    return localStorage.getItem('token');
+    return getStoredItem('token');
 }
 
 function getUser() {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    const userStr = getStoredItem('user');
+    if (userStr) {
+        try {
+            return JSON.parse(userStr);
+        } catch (err) {
+            console.warn('Stored user session is invalid, falling back to token claims.');
+        }
+    }
+
+    const token = getToken();
+    return token ? getUserFromToken(token) : null;
 }
 
 function setAuth(token, user) {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
+    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('user', JSON.stringify(user));
 }
 
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     window.location.href = 'login.html';
+}
+
+function getUserFromToken(token) {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return {
+            email: payload.sub,
+            role: (payload.role || '').replace('ROLE_', ''),
+            name: payload.sub || 'User'
+        };
+    } catch (err) {
+        return null;
+    }
+}
+
+function requireRole(allowedRoles) {
+    const token = getToken();
+    const user = getUser();
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+
+    if (!token || !user || !roles.includes(user.role)) {
+        window.location.replace('login.html');
+        return null;
+    }
+
+    return user;
 }
 
 async function apiFetch(endpoint, options = {}) {
